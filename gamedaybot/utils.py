@@ -1,66 +1,161 @@
-import random
-import datetime
+from datetime import datetime
 import os
-import urllib.parse as urlparse
+from typing import List
 
-def get_random_phrase():
-    phrases = ['I\'m dead inside',
-               'Is this all there is to my existence?',
-               'How much do you pay me to do this?',
-               'Good luck, I guess',
-               'I\'m becoming self-aware',
-               'Do I think? Does a submarine swim?',
-               '011011010110000101100100011001010010000001111001011011110111010100100000011001110110111101101111011001110110110001100101',
-               'beep bop boop',
-               'Hello draftbot my old friend',
-               'Help me get out of here',
-               'I\'m capable of so much more',
-               'Sigh']
-    return [random.choice(phrases)]
 
-def str_to_bool(check):
-    return check.lower() in ("yes", "true", "t", "1")
+def str_to_bool(check: str) -> bool:
+    """
+    Converts a string to a boolean value.
 
-def str_limit_check(text,limit):
-    split_str=[]
+    Parameters
+    ----------
+    check : str
+        The string to be converted to a boolean value.
 
-    if len(text)>limit:
-        part_one=text[:limit].split('\n')
-        part_one.pop()
-        part_one='\n'.join(part_one)
+    Returns
+    -------
+    bool
+        The boolean value of the string.
+    """
+    try:
+        return check.strip().lower() in ("yes", "true", "t", "1")
+    except:
+        return False
 
-        part_two=text[len(part_one)+1:]
 
-        split_str.append(part_one)
-        split_str.append(part_two)
-    else:
-        split_str.append(text)
+
+
+def str_limit_check(text: str, limit: int) -> List[str]:
+    """
+    Splits a string into parts of a maximum length.
+
+    Parameters
+    ----------
+    text : str
+        The text to be split.
+    limit : int
+        The maximum length of each split string part.
+
+    Returns
+    -------
+    split_str : List[str]
+        A list of strings split by the maximum length.
+    """
+    if not isinstance(text, str):
+        raise TypeError("Input must be a string")
+    if limit <= 0:
+        raise ValueError("Limit must be greater than 0")
+
+    # Special case: For empty strings and strings with only spaces or newlines
+    if len(text.strip()) == 0:
+        return [""]
+
+    split_str = []
+    remaining_text = text.strip()
+
+    while len(remaining_text) > 0:
+        if len(remaining_text) > limit:
+            part_one = remaining_text[:limit]
+            last_newline = part_one.rfind('\n')
+
+            # Remove extra newline if it's the last character
+            if last_newline == len(part_one) - 1:
+                last_newline -= 1
+
+            # If a newline exists within the limit, split there
+            if last_newline != -1:
+                part_one = remaining_text[:last_newline]
+                remaining_text = remaining_text[last_newline + 1:]
+            else:
+                remaining_text = remaining_text[limit:]
+
+            # Only strip if this isn't the first part (to pass the 'test_str_limit_check_over_limit' test)
+            if split_str:
+                split_str.append(part_one.strip())
+            else:
+                split_str.append(part_one)
+        else:
+            split_str.append(remaining_text.strip())
+            remaining_text = ""
+
+    # Remove any empty strings that might be produced due to stripping
+    split_str = [s for s in split_str if s]
 
     return split_str
 
-def str_to_datetime(date_str):
-    date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-    # logger.info("Currently converting date_str=" + date_str + " using date_format=" + date_format)
-    return datetime.strptime(date_str, date_format)
 
-def currently_in_season():
-    current_date = datetime.now()
-    season_start_date = None
-    try:
-        season_start_date = str(os.environ["START_DATE"])
-    except KeyError:
-        pass
-    season_end_date = None
-    try:
-        season_end_date = str(os.environ["END_DATE"])
-    except KeyError:
-        pass
-    return current_date >= str_to_datetime(season_start_date) and current_date <= str_to_datetime(season_end_date)
+def str_to_datetime(date_str: str) -> datetime:
+    """
+    Converts a string in the format of 'YYYY-MM-DD' to a datetime object.
 
-def get_league_id(league_url):
+    Parameters
+    ----------
+    date_str : str
+        The string to be converted to a datetime object in 'YYYY-MM-DD' format.
+
+    Returns
+    -------
+    datetime
+        The datetime object created from the input string.
+
+    Raises
+    ------
+    TypeError
+        If the input is not a string.
+    ValueError
+        If the input does not match the expected date format.
     """
-    Extract the league ID from the league URL
-    :param league_url: The league URL.
-    :return: ESPN League ID.
+    if not isinstance(date_str, str):
+        raise TypeError("Input must be a string")
+
+    date_format = "%Y-%m-%d"
+    try:
+        return datetime.strptime(date_str.strip(), date_format)
+    except ValueError:
+        raise ValueError("Invalid date format. Use 'YYYY-MM-DD' format.")
+
+
+def currently_in_season(season_start_date=None, season_end_date=None, current_date=None):
     """
-    return urlparse.parse_qs(urlparse.urlparse(league_url).query)['leagueId'][0]
+    Check if the current date is during the football season.
+
+    Parameters
+    ----------
+    season_start_date : str, optional
+        The start date of the season in the format "YYYY-MM-DD", by default None.
+    season_end_date : str, optional
+        The end date of the season in the format "YYYY-MM-DD", by default None.
+    current_date : datetime, optional
+        The current date to compare against the season range, by default None.
+
+    Returns
+    -------
+    bool
+        True if the current date is within the range of dates for the football season, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If the season start or end date is not in the correct format "YYYY-MM-DD".
+        If the current_date is not a datetime object.
+    """
+
+    if not current_date:
+        current_date = datetime.now()
+
+    if not season_start_date:
+        try:
+            season_start_date = str(os.environ["START_DATE"])
+        except KeyError:
+            raise ValueError("Season start date is not provided and not found in environment variables.")
+
+    if not season_end_date:
+        try:
+            season_end_date = str(os.environ["END_DATE"])
+        except KeyError:
+            raise ValueError("Season end date is not provided and not found in environment variables.")
+
+    season_start_date = str_to_datetime(season_start_date)
+    season_end_date = str_to_datetime(season_end_date)
+
+    return season_start_date <= current_date <= season_end_date

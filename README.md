@@ -212,7 +212,9 @@ git clone https://github.com/dtcarls/fantasy_football_chat_bot
 
 cd fantasy_football_chat_bot
 
-python3 setup.py install
+pip install -r requirements.txt
+# or
+#python3 setup.py install
 ```
 
 ### Environment Variables
@@ -261,7 +263,6 @@ Use BOT_ID if using Groupme, DISCORD_WEBHOOK_URL if using Discord, and SLACK_WEB
 >>> export WEBHOOK_URL=[enter your Webhook URL]
 >>> export LEAGUE_ID=[enter ESPN league ID]
 >>> export LEAGUE_YEAR=[enter league year]
->>> cd gamedaybot
 >>> python3 gamedaybot/espn/espn_bot.py
 ```
 
@@ -271,7 +272,8 @@ Automated tests for this package are included in the `tests` directory. After in
 you can run these tests by changing the directory to the `gamedaybot` directory and running the following:
 
 ```python3
-python3 setup.py test
+pip install -r requirements-test.txt
+pytest
 ```
 </details>
 
