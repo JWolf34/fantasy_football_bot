@@ -23,6 +23,12 @@ def get_projected_scoreboard(league, week=None):
 def get_standings(league, top_half_scoring=False, week=None):
     standings_txt = ''
     teams = league.teams
+    
+    #Start Custom logging
+    for team in teams:
+        print(team)
+
+    #End Custom logging
     standings = []
     if not top_half_scoring:
         standings = league.standings()
